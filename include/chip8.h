@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <cstdlib>
+#include <ctime>
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -11,12 +13,14 @@ public:
     void initialize();
     void emulateCycle();
     void loadGame(std::string gameName);
-
-    u8 memory[4096];    // chip8 memory (temporarily here)
+    void setKey(u8 k, u8 state);
 
 private:
+    // mutable data
     u16 opcode;         // operation code
+    u8 memory[4096];    // chip8 memory
     u8 V[16];           // chip8 cpu registers
+    bool drawFlag;
     u16 I;              // index register
     u16 pc;             // program counter
     u8 gfx[64 * 32];    // 2048 pixel screen
@@ -26,6 +30,7 @@ private:
     u16 sp;             // stack pointer
     u8 key[16];         // keypad
 
+    // chip 8 font set data
     u8 chip8Fontset[80] =
     { 
      0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -45,33 +50,41 @@ private:
      0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
      0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
-};
 
-void chip8::initialize() {
-    pc = 0x200; // this is where the program counter starts
-    opcode = 0;
-    I = 0;
-    sp = 0;
-    memset(gfx, 0, sizeof(gfx));
-    memset(stack, 0, sizeof(stack));
-    memset(V, 0, sizeof(V));
-    memset(memory, 0, sizeof(memory));
+    // dispatch tables
+    using opcodeHandler = void(chip8::*)(u16);
+    static opcodeHandler table[16];
+    static opcodeHandler table8[15];
 
-    // loading in fontset starting from 0x50 to 0xA0
-    for (int i = 0; i < 80; ++i) {
-        memory[0x50 + i] = chip8Fontset[i];
-    }
+    void opNull(u16 opcode) { return; };
+    void op0(u16 opcode);
+    void op1(u16 opcode);
+    void op2(u16 opcode);
+    void op3(u16 opcode);
+    void op4(u16 opcode);
+    void op5(u16 opcode);
+    void op6(u16 opcode);
+    void op7(u16 opcode);
+    void op8(u16 opcode);
+    void op80(u16 opcode);
+    void op81(u16 opcode);
+    void op82(u16 opcode);
+    void op83(u16 opcode);
+    void op84(u16 opcode);
+    void op85(u16 opcode);
+    void op86(u16 opcode);
+    void op87(u16 opcode);
+    void op8E(u16 opcode);
+    void op9(u16 opcode);
+    void opA(u16 opcode);
+    void opB(u16 opcode);
+    void opC(u16 opcode);
+    void opD(u16 opcode);
+    void opE(u16 opcode);
+    void opF(u16 opcode);
 
-    delayTimer = 0;
-    soundTimer = 0;
-};
-
-void chip8::loadGame(std::string name) {
-    std::ifstream romFile(name, std::ios::binary);
-    char byte;
-    int i = 0;
-    while (romFile.get(byte)) {
-        memory[0x200 + i] = static_cast<u8>(byte);
-        ++i;
-    }
+    // helper functions
+    void fetchOpcode();
+    void executeOperation();
+    void getKeyPress();
 };
