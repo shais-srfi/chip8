@@ -7,6 +7,7 @@
 
 using u8 = uint8_t;
 using u16 = uint16_t;
+using u32 = uint32_t;
 
 class chip8 {
 public:
@@ -14,16 +15,19 @@ public:
     void emulateCycle();
     void loadGame(std::string gameName);
     void setKey(u8 k, u8 state);
+    void tickTimers();
+
+    bool drawFlag;
+    u8 gfx[64 * 32];    // 2048 pixel screen
+    bool soundActive() const { return soundTimer > 0; }
 
 private:
     // mutable data
     u16 opcode;         // operation code
     u8 memory[4096];    // chip8 memory
     u8 V[16];           // chip8 cpu registers
-    bool drawFlag;
     u16 I;              // index register
     u16 pc;             // program counter
-    u8 gfx[64 * 32];    // 2048 pixel screen
     u8 delayTimer;
     u8 soundTimer;
     u16 stack[16];

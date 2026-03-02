@@ -9,6 +9,9 @@ void chip8::initialize() {
     memset(stack, 0, sizeof(stack));
     memset(V, 0, sizeof(V));
     memset(memory, 0, sizeof(memory));
+    memset(key, 0, sizeof(key));
+    drawFlag = false;
+
 
     // loading in fontset starting from 0x50 to 0xA0
     for (int i = 0; i < 80; ++i) {
@@ -25,7 +28,7 @@ void chip8::loadGame(std::string name) {
     std::ifstream romFile(name, std::ios::binary);
     char byte;
     int i = 0;
-    while (romFile.get(byte)) {
+    while (romFile.get(byte) && i < (4096 - 0x200)) {
         memory[0x200 + i] = static_cast<u8>(byte);
         ++i;
     }
@@ -33,9 +36,11 @@ void chip8::loadGame(std::string name) {
 
 void chip8::emulateCycle() {
     executeOperation();
+}
 
+void chip8::tickTimers() {
     if(delayTimer > 0) --delayTimer;
-    if(soundTimer == 1) --soundTimer;
+    if(soundTimer > 0) --soundTimer;
 }
 
 void chip8::setKey(u8 k, u8 state) {
@@ -77,6 +82,8 @@ void chip8::executeOperation() {
     fetchOpcode();
     (this->*table[(opcode & 0xF000) >> 12])(opcode);
 }
+
+///  opcode implementations ///
 
 void chip8::op0(u16 oc) {
     switch (oc & 0x00FF) {
